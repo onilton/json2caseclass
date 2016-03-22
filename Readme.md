@@ -1,3 +1,21 @@
+Scala.js port of json 2 case class 
+=================
+
+This fork is my try to port the original code to Scala.js.
+
+## Why
+  
+  Because...
+ 
+  **this is SCALA!**
+    
+## Future work
+
+ * Get rid of underscore.js
+ * More types!
+ * Use something modern like React.js
+ * Use something like scalacss?
+
 json 2 case class
 =================
 
