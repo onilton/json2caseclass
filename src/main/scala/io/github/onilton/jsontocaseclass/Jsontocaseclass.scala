@@ -93,7 +93,7 @@ object Jsontocaseclass extends js.JSApp {
           throw new Exception("Not an Object or Array")
       }
 
-      analyse_object(o.asInstanceOf[js.Dynamic], "r00tJsonObject".asInstanceOf[js.Dynamic])
+      analyse_object(o.asInstanceOf[js.Object], "r00tJsonObject")
 
       $("#alertplace").append(t.info($("#classesplace div.one_class").length+" case class generated"))
 
@@ -122,120 +122,79 @@ object Jsontocaseclass extends js.JSApp {
     oname <- scala_words
   } yield (oname.capitalize))
 
-  def analyse_object(o: js.Dynamic, oname2: js.Dynamic) {
-    var oname = generate_name(oname2.asInstanceOf[String])
-    var sign = generate_signature(o)
-    if ($("#class_"+sign).length > 0) {
+  def analyse_object(o: js.Object, oname2: String) {
+    val oname = generate_name(oname2)
+    val sign = generate_signature(o.asInstanceOf[js.Dynamic])
+    if ($("#class_" + sign).length > 0) {
       // println("class already analyse")
     } else {
-      var elem = $(t.one_class(oname, sign.asInstanceOf[String]))
-      var elem_u = elem.find("div.ul")
-      if (_u.size(o) > 22) {
+      val elem = $(t.one_class(oname, sign.asInstanceOf[String]))
+      val elem_u = elem.find("div.ul")
+
+      val obj = o.asInstanceOf[js.Dictionary[Any]]
+
+      if (obj.keys.size > 22) {
         $("#alertplace").append(t.error("the " + oname + " class is exceding 22 fields, generated but it will not work, due to the Product arity limitation"))
       }
 
-      _u.each(o, (value: js.Dynamic, key: js.Dynamic, list: js.Dynamic) => {
-        var ts = "String"
-        var sha = ""
-        var list = ""
-        var disabled = ""
+      obj.foreach({
+        case (key: String, dvalue: Any) =>
+          var sha = ""
+          var list = ""
+          var disabled = ""
 
-        if (_u.isString(value)) {
-          ts = "String"
-        }
-        if (_u.isNumber(value)) {
-          ts = "Double"
-        }
-        if (_u.isBoolean(value)) {
-          ts = "Boolean"
-        }
-        if (_u.isDate(value)) {
-          ts = "Date"
-        }
+          val ts = dvalue match {
+            case _: String  => "String"
+            case _: Double  => "Double"
+            case _: Boolean => "Boolean"
+            case _: js.Date => "Date"
+            case value: js.Array[_] =>
+              if (is_value_consistent(value.asInstanceOf[js.Dynamic])) {
+                list = "List"
+                disabled = "disabled"
+                val generated_name = generate_name(list + "[" + generate_name(key) + "]")
 
-        if (_u.isArray(value)) {
-          if (is_value_consistent(value)) {
-            list = "List"
-            disabled = "disabled"
-            ts = generate_name(list + "[" + generate_name(key.asInstanceOf[String]) + "]")
-            if (_u.size(value) == 0) {
-              $("#alertplace").append(t.error("the " + oname + " " + key + " field is an empty array : cannot analyse :-("))
-            } else {
-              if (_u.isObject(dynToArray(value)(0))) {
-                sha = generate_signature_collection(value).asInstanceOf[String]
-                analyse_object(dynToArray(value)(0), key)
+                if (value.isEmpty) {
+                  $("#alertplace").append(t.error("the " + oname + " " + key + " field is an empty array : cannot analyse :-("))
+                  generated_name
+                } else {
+                  val head: Any = value.head
+                  head match {
+                    case vv: js.Object =>
+                      sha = generate_signature_collection(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+                      analyse_object(vv, key)
+                      generated_name
+                    case vv =>
+                      val ts2 = vv match {
+                        case _: String  => "String"
+                        case _: Double  => "Double"
+                        case _: Boolean => "Boolean"
+                        case _: js.Date => "Date"
+                        case _          => "String"
+                      }
+
+                      disabled = ""
+                      generate_name(list + "[" + ts2 + "]")
+                  }
+                }
               } else {
-                var vv = dynToArray(value)(0)
-                var ts2 = "String"
-                disabled = ""
-                if (_u.isString(vv)) {
-                  ts2 = "String"
-                }
-                if (_u.isNumber(vv)) {
-                  ts2 = "Double"
-                }
-                if (_u.isBoolean(vv)) {
-                  ts2 = "Boolean"
-                }
-                if (_u.isDate(vv)) {
-                  ts2 = "Date"
-                }
-                ts = generate_name(list + "[" + ts2 + "]")
+                $("#alertplace").append(t.error("the " + oname + " " + key + " field is prentending an array but not consistent"))
+                "String" // other
               }
-            }
-          } else {
-            $("#alertplace").append(t.error("the " + oname + " " + key + " field is prentending an array but not consistent"))
+            case value: js.Object =>
+              disabled = "disabled"
+              sha = generate_signature(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+              analyse_object(value, key)
+              generate_name(key)
+            case _ => "String" //"Outro" // String
           }
-        }
+          elem_u.append(t.one_line(key, ts, sha, disabled, list, oname))
 
-        if (_u.isObject(value) && !_u.isArray(value)) {
-          /* THERE IS THE MAP CODE
+        case (key: String, _) =>
+          // when we have null, treat as string
+          elem_u.append(t.one_line(key, "String", "", "", "", oname))
+      })
 
-         looking for a good way to choose between map and object
-
-          if(is_value_consistent(value)){
-             list="Map"
-
-             for(var i in value){
-                var ts2 = "ERRORFOUND"
-                var vv = value[i]
-                if(_.isString(vv)){
-                   ts2 = "String"
-                }
-                if(_.isNumber(vv)){
-                   ts2 = "Double"
-                }
-                if(_.isBoolean(vv)){
-                   ts2 = "Boolean"
-                }
-                if(_.isDate(vv)){
-                   ts2 = "Date"
-                }
-                ts="Map[String,"+ts2+"]"
-
-                if(_.isObject(vv)){
-                   ts2 = "Object"
-                   sha = generate_signature(vv)
-                   disabled = "disabled"
-                   ts="Map[String,"+generate_name(key)+"]"
-                   analyse_object(vv, key)
-                }
-                if(_.isArray(vv)){
-                   ts2 = "Array"
-                }
-                break
-             }
-          }else{
-          */
-          ts = generate_name(key.asInstanceOf[String])
-          disabled = "disabled"
-          sha = generate_signature(value).asInstanceOf[String]
-          analyse_object(value, key)
-          //   }
-        }
-
-        elem_u.append(t.one_line(key.asInstanceOf[String], ts, sha, disabled, list, oname))
-      }, this.asInstanceOf[js.Dynamic])
       elem.append(t.info(elem_u.find(".li").length + " fields"))
 
       $("#classesplace").append(elem)
