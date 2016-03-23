@@ -122,6 +122,10 @@ object Jsontocaseclass extends js.JSApp {
     oname <- scala_words
   } yield (oname.capitalize))
 
+  case class ClassField(name: String, typescala: String, sha: String = "", preventChange: Boolean = false, list: String = "") {
+    def disabled = if (preventChange) "disabled" else ""
+  }
+
   def analyse_object(o: js.Object, oname2: String) {
     val oname = generate_name(oname2)
     val sign = generate_signature(o.asInstanceOf[js.Dynamic])
@@ -139,31 +143,28 @@ object Jsontocaseclass extends js.JSApp {
 
       obj.foreach({
         case (key: String, dvalue: Any) =>
-          var sha = ""
-          var list = ""
-          var disabled = ""
+          val field = ClassField(key, "String")
 
-          val ts = dvalue match {
-            case _: String  => "String"
-            case _: Double  => "Double"
-            case _: Boolean => "Boolean"
-            case _: js.Date => "Date"
+          val finalField = dvalue match {
+            case _: String  => field.copy(typescala = "String")
+            case _: Double  => field.copy(typescala = "Double")
+            case _: Boolean => field.copy(typescala = "Boolean")
+            case _: js.Date => field.copy(typescala = "Date")
             case value: js.Array[_] =>
               if (is_value_consistent(value.asInstanceOf[js.Dynamic])) {
-                list = "List"
-                disabled = "disabled"
-                val generated_name = generate_name(list + "[" + generate_name(key) + "]")
+                val listField = field.copy(list = "List", preventChange = true)
+                val generated_ts = generate_name(listField.list + "[" + generate_name(key) + "]")
 
                 if (value.isEmpty) {
                   $("#alertplace").append(t.error("the " + oname + " " + key + " field is an empty array : cannot analyse :-("))
-                  generated_name
+                  listField.copy(typescala = generated_ts)
                 } else {
                   val head: Any = value.head
                   head match {
                     case vv: js.Object =>
-                      sha = generate_signature_collection(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+                      val sha = generate_signature_collection(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
                       analyse_object(vv, key)
-                      generated_name
+                      listField.copy(typescala = generated_ts, sha = sha)
                     case vv =>
                       val ts2 = vv match {
                         case _: String  => "String"
@@ -173,26 +174,27 @@ object Jsontocaseclass extends js.JSApp {
                         case _          => "String"
                       }
 
-                      disabled = ""
-                      generate_name(list + "[" + ts2 + "]")
+                      val ts = generate_name(listField.list + "[" + ts2 + "]")
+                      listField.copy(typescala = ts, preventChange = false)
                   }
                 }
               } else {
                 $("#alertplace").append(t.error("the " + oname + " " + key + " field is prentending an array but not consistent"))
-                "String" // other
+                field // If value is not consistent, just return String field
               }
             case value: js.Object =>
-              disabled = "disabled"
-              sha = generate_signature(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+              val sha = generate_signature(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
               analyse_object(value, key)
-              generate_name(key)
-            case _ => "String" //"Outro" // String
+              field.copy(typescala = generate_name(key), preventChange = true, sha = sha)
+            case _ => field // last resort, just return String field
           }
-          elem_u.append(t.one_line(key, ts, sha, disabled, list, oname))
+          val f = finalField
+          elem_u.append(t.one_line(key, f.typescala, f.sha, f.disabled, f.list, oname))
 
         case (key: String, _) =>
-          // when we have null, treat as string
-          elem_u.append(t.one_line(key, "String", "", "", "", oname))
+          // when we have null as field value, treat as string
+          val f = ClassField(key, "String")
+          elem_u.append(t.one_line(key, f.typescala, f.sha, f.disabled, f.list, oname))
       })
 
       elem.append(t.info(elem_u.find(".li").length + " fields"))
