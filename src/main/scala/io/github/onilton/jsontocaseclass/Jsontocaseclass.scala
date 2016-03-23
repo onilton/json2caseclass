@@ -82,7 +82,7 @@ object Jsontocaseclass extends js.JSApp {
           //return 1
         }
 
-      val o = parsedJson match {
+      val o = (parsedJson: Any) match {
         case a: js.Array[_] =>
           println("array")
           $("#alertplace").append(t.alert("The json root is an array, only the first entity will be analyse..."))
