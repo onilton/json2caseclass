@@ -86,14 +86,14 @@ object Jsontocaseclass extends js.JSApp {
         case a: js.Array[_] =>
           println("array")
           $("#alertplace").append(t.alert("The json root is an array, only the first entity will be analyse..."))
-          a.head
+          a.head.asInstanceOf[js.Object]
         case a: js.Object => println("object") ; a
         case _ =>
           $("#alertplace").append(t.error("The json root is not an object, cannot do anything for you..."))
           throw new Exception("Not an Object or Array")
       }
 
-      analyse_object(o.asInstanceOf[js.Object], "r00tJsonObject")
+      analyse_object(o, "r00tJsonObject")
 
       $("#alertplace").append(t.info($("#classesplace div.one_class").length+" case class generated"))
 
