@@ -136,7 +136,7 @@ object Jsontocaseclass extends js.JSApp {
         case head +: _ =>
           head match {
             case value: js.Object =>
-              val sha = generate_signature_collection(array.asInstanceOf[js.Dynamic])
+              val sha = generate_signature_collection(array)
               analyse_object(value, key)
               listField.copy(typescala = generated_ts, sha = sha)
             case value =>
@@ -163,7 +163,7 @@ object Jsontocaseclass extends js.JSApp {
 
   def analyse_object(o: js.Object, oname2: String) {
     val oname = generate_name(oname2)
-    val sign = generate_signature(o.asInstanceOf[js.Dynamic])
+    val sign = generate_signature(o)
     if ($("#class_" + sign).length > 0) {
       // println("class already analyse")
     } else {
@@ -187,7 +187,7 @@ object Jsontocaseclass extends js.JSApp {
             case _: js.Date => field.copy(typescala = "Date")
             case array: js.Array[Any @unchecked] => analyseArray(array, key, oname)
             case value: js.Object =>
-              val sha = generate_signature(value.asInstanceOf[js.Dynamic])
+              val sha = generate_signature(value)
               analyse_object(value, key)
               field.copy(typescala = generate_name(key), preventChange = true, sha = sha)
             case _ => field // last resort, just return String field
@@ -266,30 +266,25 @@ object Jsontocaseclass extends js.JSApp {
     } else {
       val newO = if (!_u.isArray(o)) _u.values(o) else o
       var n = dynToArray(o)(0)
-      var nn = if (_u.isObject(n)) generate_signature(n) else js.typeOf(n)
-      return _u.every(o, (n: js.Dynamic) => if (_u.isObject(n)) generate_signature(n) else js.typeOf(n) == nn, this.asInstanceOf[js.Dynamic])
+      var nn = if (_u.isObject(n)) generate_signature(n.asInstanceOf[js.Object]) else js.typeOf(n)
+      return _u.every(o, (n: js.Dynamic) => if (_u.isObject(n)) generate_signature(n.asInstanceOf[js.Object]) else js.typeOf(n) == nn, this.asInstanceOf[js.Dynamic])
     }
   }
 
-  def generate_signature_collection(o: js.Dynamic): String = {
-   if(_u.size(o) == 0) {
-      return "0"
+  def generate_signature_collection(seq: collection.mutable.Seq[Any]): String = {
+   if (seq.isEmpty) {
+     "0"
    } else {
-     val newO = if(!_u.isArray(o)) _u.values(o) else o
-     return generate_signature(dynToArray(newO)(0))
+     generate_signature(seq.head.asInstanceOf[js.Object])
    }
   }
 
   def dynToArray(o: js.Dynamic): js.Array[js.Dynamic] = o.asInstanceOf[js.Array[js.Dynamic]]
 
-  def generate_signature(o: js.Dynamic): String = {
-    if (_u.isObject(o)) {
-       val finalArray = _u.map(_u.keys(o), (n: js.Dynamic) => n.toLowerCase() )
-       val finalString = finalArray.sort().join("|")
-       g.SHA1(finalString).asInstanceOf[String]
-    } else {
-       g.SHA1(_u.map(o, (n: js.Dynamic) => js.typeOf(n)).sort().join("|")).asInstanceOf[String]
-    }
+  def generate_signature(o: js.Object): String = {
+    val objDict = o.asInstanceOf[js.Dictionary[Any]]
+    val baseString = objDict.keys.toList.map { n => n.toLowerCase() }.sorted.mkString("|")
+    g.SHA1(baseString).asInstanceOf[String]
   }
 
   def generate_name(oname: String) = {
