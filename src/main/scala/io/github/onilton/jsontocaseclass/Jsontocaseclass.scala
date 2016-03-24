@@ -126,6 +126,41 @@ object Jsontocaseclass extends js.JSApp {
     def disabled = if (preventChange) "disabled" else ""
   }
 
+  def analyseArray(array: collection.mutable.Seq[Any], key: String, parentName: String) = {
+    val field = ClassField(key, "String")
+    if (is_value_consistent(array.asInstanceOf[js.Dynamic])) {
+      val listField = field.copy(list = "List", preventChange = true)
+      val generated_ts = generate_name(listField.list + "[" + generate_name(key) + "]")
+
+      array match {
+        case head +: _ =>
+          head match {
+            case value: js.Object =>
+              val sha = generate_signature_collection(array.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+              analyse_object(value, key)
+              listField.copy(typescala = generated_ts, sha = sha)
+            case value =>
+              val ts2 = value match {
+                case _: String  => "String"
+                case _: Double  => "Double"
+                case _: Boolean => "Boolean"
+                case _: js.Date => "Date"
+                case _          => "String"
+              }
+
+              val ts = generate_name(listField.list + "[" + ts2 + "]")
+              listField.copy(typescala = ts, preventChange = false)
+          }
+        case _ =>
+          $("#alertplace").append(t.error("the " + parentName + " " + key + " field is an empty array : cannot analyse :-("))
+          listField.copy(typescala = generated_ts)
+      }
+    } else {
+      $("#alertplace").append(t.error("the " + parentName + " " + key + " field is prentending an array but not consistent"))
+      field // If value is not consistent, just return String field
+    }
+  }
+
   def analyse_object(o: js.Object, oname2: String) {
     val oname = generate_name(oname2)
     val sign = generate_signature(o.asInstanceOf[js.Dynamic])
@@ -146,42 +181,11 @@ object Jsontocaseclass extends js.JSApp {
           val field = ClassField(key, "String")
 
           val finalField = dvalue match {
-            case _: String  => field.copy(typescala = "String")
+            case _: String  => field
             case _: Double  => field.copy(typescala = "Double")
             case _: Boolean => field.copy(typescala = "Boolean")
             case _: js.Date => field.copy(typescala = "Date")
-            case value: js.Array[_] =>
-              if (is_value_consistent(value.asInstanceOf[js.Dynamic])) {
-                val listField = field.copy(list = "List", preventChange = true)
-                val generated_ts = generate_name(listField.list + "[" + generate_name(key) + "]")
-
-                if (value.isEmpty) {
-                  $("#alertplace").append(t.error("the " + oname + " " + key + " field is an empty array : cannot analyse :-("))
-                  listField.copy(typescala = generated_ts)
-                } else {
-                  val head: Any = value.head
-                  head match {
-                    case vv: js.Object =>
-                      val sha = generate_signature_collection(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
-                      analyse_object(vv, key)
-                      listField.copy(typescala = generated_ts, sha = sha)
-                    case vv =>
-                      val ts2 = vv match {
-                        case _: String  => "String"
-                        case _: Double  => "Double"
-                        case _: Boolean => "Boolean"
-                        case _: js.Date => "Date"
-                        case _          => "String"
-                      }
-
-                      val ts = generate_name(listField.list + "[" + ts2 + "]")
-                      listField.copy(typescala = ts, preventChange = false)
-                  }
-                }
-              } else {
-                $("#alertplace").append(t.error("the " + oname + " " + key + " field is prentending an array but not consistent"))
-                field // If value is not consistent, just return String field
-              }
+            case array: js.Array[Any @unchecked] => analyseArray(array, key, oname)
             case value: js.Object =>
               val sha = generate_signature(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
               analyse_object(value, key)
