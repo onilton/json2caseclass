@@ -136,7 +136,7 @@ object Jsontocaseclass extends js.JSApp {
         case head +: _ =>
           head match {
             case value: js.Object =>
-              val sha = generate_signature_collection(array.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+              val sha = generate_signature_collection(array.asInstanceOf[js.Dynamic])
               analyse_object(value, key)
               listField.copy(typescala = generated_ts, sha = sha)
             case value =>
@@ -187,7 +187,7 @@ object Jsontocaseclass extends js.JSApp {
             case _: js.Date => field.copy(typescala = "Date")
             case array: js.Array[Any @unchecked] => analyseArray(array, key, oname)
             case value: js.Object =>
-              val sha = generate_signature(value.asInstanceOf[js.Dynamic]).asInstanceOf[String]
+              val sha = generate_signature(value.asInstanceOf[js.Dynamic])
               analyse_object(value, key)
               field.copy(typescala = generate_name(key), preventChange = true, sha = sha)
             case _ => field // last resort, just return String field
@@ -271,9 +271,9 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def generate_signature_collection(o: js.Dynamic): js.Dynamic = {
+  def generate_signature_collection(o: js.Dynamic): String = {
    if(_u.size(o) == 0) {
-      return 0.asInstanceOf[js.Dynamic]
+      return "0"
    } else {
      val newO = if(!_u.isArray(o)) _u.values(o) else o
      return generate_signature(dynToArray(newO)(0))
@@ -282,13 +282,13 @@ object Jsontocaseclass extends js.JSApp {
 
   def dynToArray(o: js.Dynamic): js.Array[js.Dynamic] = o.asInstanceOf[js.Array[js.Dynamic]]
 
-  def generate_signature(o: js.Dynamic) = {
+  def generate_signature(o: js.Dynamic): String = {
     if (_u.isObject(o)) {
        val finalArray = _u.map(_u.keys(o), (n: js.Dynamic) => n.toLowerCase() )
        val finalString = finalArray.sort().join("|")
-       js.Dynamic.global.SHA1(finalString)
+       g.SHA1(finalString).asInstanceOf[String]
     } else {
-       js.Dynamic.global.SHA1(_u.map(o, (n: js.Dynamic) => js.typeOf(n)).sort().join("|"))
+       g.SHA1(_u.map(o, (n: js.Dynamic) => js.typeOf(n)).sort().join("|")).asInstanceOf[String]
     }
   }
 
