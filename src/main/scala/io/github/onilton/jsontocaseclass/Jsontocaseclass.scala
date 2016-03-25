@@ -128,7 +128,7 @@ object Jsontocaseclass extends js.JSApp {
 
   def analyseArray(array: collection.mutable.Seq[Any], key: String, parentName: String) = {
     val field = ClassField(key, "String")
-    if (is_value_consistent(array.asInstanceOf[js.Dynamic])) {
+    if (is_value_consistent(array)) {
       val listField = field.copy(list = "List", preventChange = true)
       val generated_ts = generate_name(listField.list + "[" + generate_name(key) + "]")
 
@@ -260,14 +260,15 @@ object Jsontocaseclass extends js.JSApp {
       generate_scala($("#classesplace").asInstanceOf[js.Dynamic])
   }
 
-  def is_value_consistent(o: js.Dynamic): Boolean = {
-    if (_u.size(o) == 0) {
-      return true
-    } else {
-      val newO = if (!_u.isArray(o)) _u.values(o) else o
-      var n = dynToArray(o)(0)
-      var nn = if (_u.isObject(n)) generate_signature(n.asInstanceOf[js.Object]) else js.typeOf(n)
-      return _u.every(o, (n: js.Dynamic) => if (_u.isObject(n)) generate_signature(n.asInstanceOf[js.Object]) else js.typeOf(n) == nn, this.asInstanceOf[js.Dynamic])
+  def is_value_consistent(array: collection.mutable.Seq[Any]): Boolean = {
+    def itemSignature(item: Any) = item match {
+      case obj: js.Object => generate_signature(obj)
+      case value => js.typeOf(value.asInstanceOf[js.Any])
+    }
+
+    val expectedItemSignatureOpt = array.headOption.map(itemSignature)
+    expectedItemSignatureOpt.forall { expectedItemSignature =>
+      array.forall(n => { itemSignature(n) == expectedItemSignature})
     }
   }
 
