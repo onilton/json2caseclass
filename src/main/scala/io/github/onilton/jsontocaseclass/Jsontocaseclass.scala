@@ -39,7 +39,7 @@ object Jsontocaseclass extends js.JSApp {
          +"                 </form>")
 
       $("#json_analisys_zone").submit((el: dom.Element, e: org.querki.jquery.JQueryEventObject) => {
-          re_generate_scala(e.asInstanceOf[js.Dynamic])
+          re_generate_scala(e)
       })
 
       val raw_json = $(e.target).find("textarea").value().asInstanceOf[String]
@@ -81,7 +81,7 @@ object Jsontocaseclass extends js.JSApp {
       })
 
       $("#classesplace input").change({ (e: JQueryEventObject) =>
-        re_generate_scala(e.asInstanceOf[js.Dynamic])
+        re_generate_scala(e)
       })
     })
   }
@@ -226,7 +226,7 @@ object Jsontocaseclass extends js.JSApp {
     }: js.ThisFunction0[dom.Element, Any])
   }
 
-  def re_generate_scala(e: js.Dynamic) {
+  def re_generate_scala(e: dom.Event) {
       e.preventDefault()
       generate_scala($("#classesplace"))
   }
