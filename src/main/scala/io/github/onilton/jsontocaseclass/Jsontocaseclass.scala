@@ -251,8 +251,6 @@ object Jsontocaseclass extends js.JSApp {
    }
   }
 
-  def dynToArray(o: js.Dynamic): js.Array[js.Dynamic] = o.asInstanceOf[js.Array[js.Dynamic]]
-
   def generate_signature(o: js.Object): String = {
     val objDict = o.asInstanceOf[js.Dictionary[Any]]
     val baseString = objDict.keys.toList.map { n => n.toLowerCase() }.sorted.mkString("|")
