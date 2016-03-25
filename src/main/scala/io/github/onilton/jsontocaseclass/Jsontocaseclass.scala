@@ -102,7 +102,7 @@ object Jsontocaseclass extends js.JSApp {
         maj_name(js.Dynamic.literal("target" -> el))
       }: js.ThisFunction1[dom.Element, Int, Any])
 
-      generate_scala($("#classesplace").asInstanceOf[js.Dynamic])
+      generate_scala($("#classesplace"))
 
       $("input.class_name").change({ (e: JQueryEventObject) =>
         maj_name(e.asInstanceOf[js.Dynamic])
@@ -217,22 +217,21 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def generate_scala(el: js.Dynamic): Unit = {
+  def generate_scala(el: JQuery): Unit = {
     var content = ""
 
-    _u.each(el.find(".one_class"), (ovalue: js.Dynamic, key: js.Dynamic, list: js.Dynamic) => {
-       var value = $(ovalue.asInstanceOf[dom.Element])
-       var props = _u.map(value.find(".li").asInstanceOf[js.Dynamic], { (ov: js.Dynamic, k: js.Dynamic, l: js.Dynamic) =>
-          var v = $(ov.asInstanceOf[dom.Element])
-          var sst = v.find("input.typescala").value().asInstanceOf[String]
-           if (v.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
-              sst = "Option["+sst+"]"
-           }
-          //return keyword do not work as expected :P
-          "  " + sanitize_var_name(v.find("label.keyname").text()) + ": " + sst
-       }, this.asInstanceOf[js.Dynamic])
-       content += t.one_scala_cclass(value.find("input.class_name").value().asInstanceOf[String], props.join(",\n")) + "\n"
-    }, this.asInstanceOf[js.Dynamic])
+    el.find(".one_class").foreach { value =>
+      val jvalue = $(value)
+      val props = jvalue.find(".li").mapElems { v =>
+        val jv = $(v)
+        var sst = jv.find("input.typescala").value().toString()
+        if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
+          sst = "Option[" + sst + "]"
+        }
+        "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + sst
+      }
+      content += t.one_scala_cclass(jvalue.find("input.class_name").value().toString(), props.mkString(",\n")) + "\n"
+    }
 
     $("#caseclassform textarea").value(content)
     $("#mycodeis").html(t.scala_code(content))
@@ -257,7 +256,7 @@ object Jsontocaseclass extends js.JSApp {
 
   def re_generate_scala(e: js.Dynamic) {
       e.preventDefault()
-      generate_scala($("#classesplace").asInstanceOf[js.Dynamic])
+      generate_scala($("#classesplace"))
   }
 
   def is_value_consistent(array: collection.mutable.Seq[Any]): Boolean = {
