@@ -183,9 +183,9 @@ object Jsontocaseclass extends js.JSApp {
   def sanitize_var_name(name: String): String = {
     /* java's String.matches all input data */
     if (name.matches("[_a-zA-Z0-9]+") && !scala_words.contains(name)) { // !_.contains(scala_words, name)){
-      return name
+      name
     } else {
-      return '`' + name + '`'
+      '`' + name + '`'
     }
   }
 
