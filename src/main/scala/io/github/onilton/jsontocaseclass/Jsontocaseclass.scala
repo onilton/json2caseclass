@@ -71,13 +71,13 @@ object Jsontocaseclass extends js.JSApp {
 
       /* This may be redudant, according some tests of mine */
       $("input.class_name").each({ (el: dom.Element, i: Int) =>
-        maj_name(js.Dynamic.literal("target" -> el))
+        maj_name(el)
       }: js.ThisFunction1[dom.Element, Int, Any])
 
       generate_scala($("#classesplace"))
 
-      $("input.class_name").change({ (e: JQueryEventObject) =>
-        maj_name(e.asInstanceOf[js.Dynamic])
+      $("input.class_name").change({ (e: dom.Element, event: JQueryEventObject) =>
+        maj_name(e)
       })
 
       $("#classesplace input").change({ (e: JQueryEventObject) =>
@@ -211,8 +211,8 @@ object Jsontocaseclass extends js.JSApp {
     g.sh_highlightDocument()
   }
 
-  def maj_name(e: js.Dynamic) = {
-    var elem = $(e.target.asInstanceOf[org.querki.jquery.JQueryEventObject])
+  def maj_name(e: dom.Element) = {
+    var elem = $(e)
     var tochange = $("""div.ul input[data-signature-class="""" + elem.attr("data-signature-class") + """"]""")
     tochange.filter("""input[data-list=""]""").value(elem.value().asInstanceOf[String])
     tochange.filter("""input[data-list="List"]""").each({ (el: dom.Element) =>
