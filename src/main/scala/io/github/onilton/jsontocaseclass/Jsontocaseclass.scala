@@ -11,34 +11,6 @@ import scala.scalajs.js.annotation.JSName
 import scala.scalajs.js.UndefOrOps
 
 
-@js.native
-trait Underscore extends js.Object {
-  def keys(x: js.Dynamic): js.Dynamic = js.native
-  def values(x: js.Dynamic): js.Dynamic = js.native
-
-  def map(x: js.Dynamic, f: js.Function1[js.Dynamic, Any]): Underscore = js.native
-  def map(x: js.Dynamic, f: js.Function3[js.Dynamic, js.Dynamic, js.Dynamic, Any], c: js.Dynamic): Underscore = js.native
-
-  //_.each(o, function(value, key, list){
-  def each(x: js.Dynamic, f: js.Function3[js.Dynamic, js.Dynamic, js.Dynamic, Any]): Unit = js.native
-  def each(x: js.Dynamic, f: js.Function3[js.Dynamic, js.Dynamic, js.Dynamic, Any], context: js.Dynamic): Unit = js.native
-  def every(x: js.Dynamic, f: js.Function, context: js.Dynamic): Boolean = js.native
-
-  def sort(): Underscore = js.native
-  def join(x: String): String = js.native
-  def size(x: js.Dynamic): Int = js.native
-  def isObject(x: js.Dynamic): Boolean = js.native
-  def isString(x: js.Dynamic): Boolean = js.native
-  def isNumber(x: js.Dynamic): Boolean = js.native
-  def isBoolean(x: js.Dynamic): Boolean = js.native
-  def isArray(x: js.Dynamic): Boolean = js.native
-  def isDate(x: js.Dynamic): Boolean = js.native
-}
-
-@JSName("_")
-@js.native
-object _u extends Underscore
-
 object Jsontocaseclass extends js.JSApp {
   def main(): Unit = {
     $("#caseclassform textarea").change( (e: org.querki.jquery.JQueryEventObject) => {
