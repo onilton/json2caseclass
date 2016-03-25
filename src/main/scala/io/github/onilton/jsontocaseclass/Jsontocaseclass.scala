@@ -102,7 +102,8 @@ object Jsontocaseclass extends js.JSApp {
     val field = ClassField(key, "String")
     if (is_value_consistent(array)) {
       val listField = field.copy(list = "List", preventChange = true)
-      val generated_ts = generate_name(listField.list + "[" + generate_name(key) + "]")
+      val innerTs = generate_name(key)
+      val generated_ts = generate_name(s"${listField.list}[$innerTs]")
 
       array match {
         case head +: _ =>
@@ -112,7 +113,7 @@ object Jsontocaseclass extends js.JSApp {
               analyse_object(value, key)
               listField.copy(typescala = generated_ts, sha = sha)
             case value =>
-              val ts2 = value match {
+              val innerTs = value match {
                 case _: String  => "String"
                 case _: Double  => "Double"
                 case _: Boolean => "Boolean"
@@ -120,15 +121,15 @@ object Jsontocaseclass extends js.JSApp {
                 case _          => "String"
               }
 
-              val ts = generate_name(listField.list + "[" + ts2 + "]")
+              val ts = generate_name(s"${listField.list}[$innerTs]")
               listField.copy(typescala = ts, preventChange = false)
           }
         case _ =>
-          $("#alertplace").append(t.error("the " + parentName + " " + key + " field is an empty array : cannot analyse :-("))
+          $("#alertplace").append(t.error(s"the $parentName $key field is an empty array : cannot analyse :-("))
           listField.copy(typescala = generated_ts)
       }
     } else {
-      $("#alertplace").append(t.error("the " + parentName + " " + key + " field is prentending an array but not consistent"))
+      $("#alertplace").append(t.error(s"the $parentName $key field is prentending an array but not consistent"))
       field // If value is not consistent, just return String field
     }
   }
@@ -145,7 +146,7 @@ object Jsontocaseclass extends js.JSApp {
       val obj = o.asInstanceOf[js.Dictionary[Any]]
 
       if (obj.keys.size > 22) {
-        $("#alertplace").append(t.error("the " + oname + " class is exceding 22 fields, generated but it will not work, due to the Product arity limitation"))
+        $("#alertplace").append(t.error(s"the $oname class is exceding 22 fields, generated but it will not work, due to the Product arity limitation"))
       }
 
       obj.foreach {
@@ -196,7 +197,7 @@ object Jsontocaseclass extends js.JSApp {
         val jv = $(v)
         val sst = jv.find("input.typescala").valueString
         val finalSst = if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
-          "Option[" + sst + "]"
+          s"Option[$sst]"
         } else sst
         "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + finalSst
       }
