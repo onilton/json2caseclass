@@ -212,16 +212,16 @@ object Jsontocaseclass extends js.JSApp {
   }
 
   def maj_name(e: dom.Element) = {
-    var elem = $(e)
-    var tochange = $("""div.ul input[data-signature-class="""" + elem.attr("data-signature-class") + """"]""")
+    val elem = $(e)
+    val tochange = $("""div.ul input[data-signature-class="""" + elem.attr("data-signature-class") + """"]""")
     tochange.filter("""input[data-list=""]""").value(elem.value().asInstanceOf[String])
     tochange.filter("""input[data-list="List"]""").each({ (el: dom.Element) =>
-      var ee = $(el)
+      val ee = $(el)
       ee.value(ee.attr("data-list") + "[" + elem.value() + "]")
     }: js.ThisFunction0[dom.Element, Any])
 
     tochange.filter("""input[data-list="Map"]""").each({ (el: dom.Element) =>
-      var ee = $(el)
+      val ee = $(el)
       ee.value(ee.attr("data-list") + "[Map," + elem.value() + "]")
     }: js.ThisFunction0[dom.Element, Any])
   }
