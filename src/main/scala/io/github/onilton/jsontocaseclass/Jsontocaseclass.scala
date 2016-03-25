@@ -190,20 +190,18 @@ object Jsontocaseclass extends js.JSApp {
   }
 
   def generate_scala(el: JQuery): Unit = {
-    var content = ""
-
-    el.find(".one_class").foreach { value =>
+    val content = el.find(".one_class").mapElems { value =>
       val jvalue = $(value)
       val props = jvalue.find(".li").mapElems { v =>
         val jv = $(v)
-        var sst = jv.find("input.typescala").value().toString()
-        if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
-          sst = "Option[" + sst + "]"
-        }
-        "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + sst
+        val sst = jv.find("input.typescala").value().toString()
+        val finalSst = if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
+          "Option[" + sst + "]"
+        } else sst
+        "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + finalSst
       }
-      content += t.one_scala_cclass(jvalue.find("input.class_name").value().toString(), props.mkString(",\n")) + "\n"
-    }
+      t.one_scala_cclass(jvalue.find("input.class_name").value().toString(), props.mkString(",\n"))
+    }.mkString("\n")
 
     $("#caseclassform textarea").value(content)
     $("#mycodeis").html(t.scala_code(content))
