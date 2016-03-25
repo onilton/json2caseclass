@@ -14,7 +14,7 @@ import scala.scalajs.js.UndefOrOps
 object Jsontocaseclass extends js.JSApp {
   def main(): Unit = {
     $("#caseclassform textarea").change( (e: org.querki.jquery.JQueryEventObject) => {
-      val finalCode = $(e.target).value().asInstanceOf[String]
+      val finalCode = $(e.target).valueString
       $("#mycodeis").html(t.scala_code(finalCode))
       g.sh_highlightDocument()
     })
@@ -42,7 +42,7 @@ object Jsontocaseclass extends js.JSApp {
           re_generate_scala(e)
       })
 
-      val raw_json = $(e.target).find("textarea").value().asInstanceOf[String]
+      val raw_json = $(e.target).find("textarea").valueString
 
       val parsedJson =
         try {
@@ -70,9 +70,9 @@ object Jsontocaseclass extends js.JSApp {
       $("#alertplace").append(t.info($("#classesplace div.one_class").length+" case class generated"))
 
       /* This may be redudant, according some tests of mine */
-      $("input.class_name").each({ (el: dom.Element, i: Int) =>
+      $("input.class_name").foreach { el =>
         maj_name(el)
-      }: js.ThisFunction1[dom.Element, Int, Any])
+      }
 
       generate_scala($("#classesplace"))
 
@@ -148,7 +148,7 @@ object Jsontocaseclass extends js.JSApp {
         $("#alertplace").append(t.error("the " + oname + " class is exceding 22 fields, generated but it will not work, due to the Product arity limitation"))
       }
 
-      obj.foreach({
+      obj.foreach {
         case (key: String, dvalue: Any) =>
           val field = ClassField(key, "String")
 
@@ -171,7 +171,7 @@ object Jsontocaseclass extends js.JSApp {
           // when we have null as field value, treat as string
           val f = ClassField(key, "String")
           elem_u.append(t.one_line(key, f.typescala, f.sha, f.disabled, f.list, oname))
-      })
+      }
 
       elem.append(t.info(elem_u.find(".li").length + " fields"))
 
@@ -194,13 +194,13 @@ object Jsontocaseclass extends js.JSApp {
       val jvalue = $(value)
       val props = jvalue.find(".li").mapElems { v =>
         val jv = $(v)
-        val sst = jv.find("input.typescala").value().toString()
+        val sst = jv.find("input.typescala").valueString
         val finalSst = if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
           "Option[" + sst + "]"
         } else sst
         "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + finalSst
       }
-      t.one_scala_cclass(jvalue.find("input.class_name").value().toString(), props.mkString(",\n"))
+      t.one_scala_cclass(jvalue.find("input.class_name").valueString, props.mkString(",\n"))
     }.mkString("\n")
 
     $("#caseclassform textarea").value(content)
@@ -212,16 +212,16 @@ object Jsontocaseclass extends js.JSApp {
   def maj_name(e: dom.Element) = {
     val elem = $(e)
     val tochange = $("""div.ul input[data-signature-class="""" + elem.attr("data-signature-class") + """"]""")
-    tochange.filter("""input[data-list=""]""").value(elem.value().asInstanceOf[String])
-    tochange.filter("""input[data-list="List"]""").each({ (el: dom.Element) =>
+    tochange.filter("""input[data-list=""]""").value(elem.valueString)
+    tochange.filter("""input[data-list="List"]""").foreach { el =>
       val ee = $(el)
-      ee.value(ee.attr("data-list") + "[" + elem.value() + "]")
-    }: js.ThisFunction0[dom.Element, Any])
+      ee.value(ee.attr("data-list") + "[" + elem.valueString + "]")
+    }
 
-    tochange.filter("""input[data-list="Map"]""").each({ (el: dom.Element) =>
+    tochange.filter("""input[data-list="Map"]""").foreach { el =>
       val ee = $(el)
-      ee.value(ee.attr("data-list") + "[Map," + elem.value() + "]")
-    }: js.ThisFunction0[dom.Element, Any])
+      ee.value(ee.attr("data-list") + "[Map," + elem.valueString + "]")
+    }
   }
 
   def re_generate_scala(e: dom.Event) {
