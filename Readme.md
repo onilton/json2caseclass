@@ -11,8 +11,6 @@ This fork is my try to port the original code to Scala.js.
     
 ## Future work
 
- * Get rid of underscore.js
- * More types!
  * Use something modern like React.js
  * Use something like scalacss?
 
