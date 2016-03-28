@@ -90,9 +90,7 @@ object Jsontocaseclass extends js.JSApp {
 
   val scalaWords = List("abstract", "case", "catch", "class", "def", "do", "else", "extends", "false", "final", "finally", "for", "forSome", "if", "implicit", "import", "lazy", "match", "new", "null", "object", "override", "package", "private", "protected", "return", "sealed", "super", "this", "throw", "trait", "try", "true", "type", "val", "var", "while", "with", "yield")
   val scalaChars = List("-", "_")
-  val scalaTypes = List("List", "Type", "Meta", "Result") ++ (for {
-    oname <- scalaWords
-  } yield (oname.capitalize))
+  val scalaTypes = List("List", "Type", "Meta", "Result") ++ scalaWords.map(_.capitalize)
 
   case class ClassField(name: String, typescala: String, sha: String = "", preventChange: Boolean = false, list: String = "") {
     def disabled = if (preventChange) "disabled" else ""
