@@ -15,7 +15,7 @@ object Jsontocaseclass extends js.JSApp {
   def main(): Unit = {
     $("#caseclassform textarea").change( (e: org.querki.jquery.JQueryEventObject) => {
       val finalCode = $(e.target).valueString
-      $("#mycodeis").html(t.scala_code(finalCode))
+      $("#mycodeis").html(t.scalaCode(finalCode))
       g.sh_highlightDocument()
     })
 
@@ -39,14 +39,14 @@ object Jsontocaseclass extends js.JSApp {
          +"                 </form>")
 
       $("#json_analisys_zone").submit((el: dom.Element, e: org.querki.jquery.JQueryEventObject) => {
-          re_generate_scala(e)
+          reGenerateScala(e)
       })
 
-      val raw_json = $(e.target).find("textarea").valueString
+      val rawJson = $(e.target).find("textarea").valueString
 
       val parsedJson =
         try {
-          JSON.parse(raw_json)
+          JSON.parse(rawJson)
         }
         catch {
           case NonFatal(e) => $("#alertplace").append(t.error("The json root is invalid..."))
@@ -65,33 +65,33 @@ object Jsontocaseclass extends js.JSApp {
           throw new Exception("Not an Object or Array")
       }
 
-      analyse_object(o, "r00tJsonObject")
+      analyseObject(o, "r00tJsonObject")
 
       $("#alertplace").append(t.info($("#classesplace div.one_class").length+" case class generated"))
 
       /* This may be redudant, according some tests of mine */
       $("input.class_name").foreach { el =>
-        maj_name(el)
+        majName(el)
       }
 
-      generate_scala($("#classesplace"))
+      generateScala($("#classesplace"))
 
       $("input.class_name").change({ (e: dom.Element, event: JQueryEventObject) =>
-        maj_name(e)
+        majName(e)
       })
 
       $("#classesplace input").change({ (e: JQueryEventObject) =>
-        re_generate_scala(e)
+        reGenerateScala(e)
       })
     })
   }
 
   // HERE CAN BE SOME CONFIG PLACE
 
-  val scala_words = List("abstract", "case", "catch", "class", "def", "do", "else", "extends", "false", "final", "finally", "for", "forSome", "if", "implicit", "import", "lazy", "match", "new", "null", "object", "override", "package", "private", "protected", "return", "sealed", "super", "this", "throw", "trait", "try", "true", "type", "val", "var", "while", "with", "yield")
-  val scala_chars = List("-", "_")
-  val scala_types = List("List", "Type", "Meta", "Result") ++ (for {
-    oname <- scala_words
+  val scalaWords = List("abstract", "case", "catch", "class", "def", "do", "else", "extends", "false", "final", "finally", "for", "forSome", "if", "implicit", "import", "lazy", "match", "new", "null", "object", "override", "package", "private", "protected", "return", "sealed", "super", "this", "throw", "trait", "try", "true", "type", "val", "var", "while", "with", "yield")
+  val scalaChars = List("-", "_")
+  val scalaTypes = List("List", "Type", "Meta", "Result") ++ (for {
+    oname <- scalaWords
   } yield (oname.capitalize))
 
   case class ClassField(name: String, typescala: String, sha: String = "", preventChange: Boolean = false, list: String = "") {
@@ -100,18 +100,18 @@ object Jsontocaseclass extends js.JSApp {
 
   def analyseArray(array: collection.mutable.Seq[Any], key: String, parentName: String) = {
     val field = ClassField(key, "String")
-    if (is_value_consistent(array)) {
+    if (isValueConsistent(array)) {
       val listField = field.copy(list = "List", preventChange = true)
-      val innerTs = generate_name(key)
-      val generated_ts = generate_name(s"${listField.list}[$innerTs]")
+      val innerTs = generateName(key)
+      val generatedTs = generateName(s"${listField.list}[$innerTs]")
 
       array match {
         case head +: _ =>
           head match {
             case value: js.Object =>
-              val sha = generate_signature_collection(array)
-              analyse_object(value, key)
-              listField.copy(typescala = generated_ts, sha = sha)
+              val sha = generateSignatureCollection(array)
+              analyseObject(value, key)
+              listField.copy(typescala = generatedTs, sha = sha)
             case value =>
               val innerTs = value match {
                 case _: String  => "String"
@@ -121,12 +121,12 @@ object Jsontocaseclass extends js.JSApp {
                 case _          => "String"
               }
 
-              val ts = generate_name(s"${listField.list}[$innerTs]")
+              val ts = generateName(s"${listField.list}[$innerTs]")
               listField.copy(typescala = ts, preventChange = false)
           }
         case _ =>
           $("#alertplace").append(t.error(s"the $parentName $key field is an empty array : cannot analyse :-("))
-          listField.copy(typescala = generated_ts)
+          listField.copy(typescala = generatedTs)
       }
     } else {
       $("#alertplace").append(t.error(s"the $parentName $key field is prentending an array but not consistent"))
@@ -134,14 +134,14 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def analyse_object(o: js.Object, oname2: String) {
-    val oname = generate_name(oname2)
-    val sign = generate_signature(o)
+  def analyseObject(o: js.Object, oname2: String) {
+    val oname = generateName(oname2)
+    val sign = generateSignature(o)
     if ($("#class_" + sign).length > 0) {
       // println("class already analyse")
     } else {
-      val elem = $(t.one_class(oname, sign.asInstanceOf[String]))
-      val elem_u = elem.find("div.ul")
+      val elem = $(t.oneClass(oname, sign.asInstanceOf[String]))
+      val elemU = elem.find("div.ul")
 
       val obj = o.asInstanceOf[js.Dictionary[Any]]
 
@@ -160,37 +160,37 @@ object Jsontocaseclass extends js.JSApp {
             case _: js.Date => field.copy(typescala = "Date")
             case array: js.Array[Any @unchecked] => analyseArray(array, key, oname)
             case value: js.Object =>
-              val sha = generate_signature(value)
-              analyse_object(value, key)
-              field.copy(typescala = generate_name(key), preventChange = true, sha = sha)
+              val sha = generateSignature(value)
+              analyseObject(value, key)
+              field.copy(typescala = generateName(key), preventChange = true, sha = sha)
             case _ => field // last resort, just return String field
           }
           val f = finalField
-          elem_u.append(t.one_line(key, f.typescala, f.sha, f.disabled, f.list, oname))
+          elemU.append(t.oneLine(key, f.typescala, f.sha, f.disabled, f.list, oname))
 
         case (key: String, _) =>
           // when we have null as field value, treat as string
           val f = ClassField(key, "String")
-          elem_u.append(t.one_line(key, f.typescala, f.sha, f.disabled, f.list, oname))
+          elemU.append(t.oneLine(key, f.typescala, f.sha, f.disabled, f.list, oname))
       }
 
-      elem.append(t.info(elem_u.find(".li").length + " fields"))
+      elem.append(t.info(elemU.find(".li").length + " fields"))
 
       $("#classesplace").append(elem)
     }
 
 }
 
-  def sanitize_var_name(name: String): String = {
+  def sanitizeVarName(name: String): String = {
     /* java's String.matches all input data */
-    if (name.matches("[_a-zA-Z0-9]+") && !scala_words.contains(name)) { // !_.contains(scala_words, name)){
+    if (name.matches("[_a-zA-Z0-9]+") && !scalaWords.contains(name)) { // !_.contains(scala_words, name)){
       name
     } else {
       '`' + name + '`'
     }
   }
 
-  def generate_scala(el: JQuery): Unit = {
+  def generateScala(el: JQuery): Unit = {
     val content = el.find(".one_class").mapElems { value =>
       val jvalue = $(value)
       val props = jvalue.find(".li").mapElems { v =>
@@ -199,18 +199,18 @@ object Jsontocaseclass extends js.JSApp {
         val finalSst = if (jv.find("""input.optional_value[type="checkbox"]""").prop("checked").orNull.asInstanceOf[Boolean]) {
           s"Option[$sst]"
         } else sst
-        "  " + sanitize_var_name(jv.find("label.keyname").text()) + ": " + finalSst
+        "  " + sanitizeVarName(jv.find("label.keyname").text()) + ": " + finalSst
       }
-      t.one_scala_cclass(jvalue.find("input.class_name").valueString, props.mkString(",\n"))
+      t.oneScalaCClass(jvalue.find("input.class_name").valueString, props.mkString(",\n"))
     }.mkString("\n")
 
     $("#caseclassform textarea").value(content)
-    $("#mycodeis").html(t.scala_code(content))
+    $("#mycodeis").html(t.scalaCode(content))
 
     g.sh_highlightDocument()
   }
 
-  def maj_name(e: dom.Element) = {
+  def majName(e: dom.Element) = {
     val elem = $(e)
     val tochange = $("""div.ul input[data-signature-class="""" + elem.attr("data-signature-class") + """"]""")
     tochange.filter("""input[data-list=""]""").value(elem.valueString)
@@ -225,14 +225,14 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def re_generate_scala(e: dom.Event) {
+  def reGenerateScala(e: dom.Event) {
       e.preventDefault()
-      generate_scala($("#classesplace"))
+      generateScala($("#classesplace"))
   }
 
-  def is_value_consistent(array: collection.mutable.Seq[Any]): Boolean = {
+  def isValueConsistent(array: collection.mutable.Seq[Any]): Boolean = {
     def itemSignature(item: Any) = item match {
-      case obj: js.Object => generate_signature(obj)
+      case obj: js.Object => generateSignature(obj)
       case value => js.typeOf(value.asInstanceOf[js.Any])
     }
 
@@ -242,23 +242,23 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def generate_signature_collection(seq: collection.mutable.Seq[Any]): String = {
+  def generateSignatureCollection(seq: collection.mutable.Seq[Any]): String = {
    if (seq.isEmpty) {
      "0"
    } else {
-     generate_signature(seq.head.asInstanceOf[js.Object])
+     generateSignature(seq.head.asInstanceOf[js.Object])
    }
   }
 
-  def generate_signature(o: js.Object): String = {
+  def generateSignature(o: js.Object): String = {
     val objDict = o.asInstanceOf[js.Dictionary[Any]]
     val baseString = objDict.keys.toList.map { n => n.toLowerCase() }.sorted.mkString("|")
     g.SHA1(baseString).asInstanceOf[String]
   }
 
-  def generate_name(oname: String) = {
+  def generateName(oname: String) = {
     val newOname = oname.capitalize
-    if (scala_types.contains(newOname))
+    if (scalaTypes.contains(newOname))
       newOname + "Bis"
     else
       newOname
@@ -277,7 +277,7 @@ object Jsontocaseclass extends js.JSApp {
       <button type="button" class="close" data-dismiss="alert">&times;</button>
       $value
       </div>"""
-    def one_line(name: String, typescala: String, sha: String, disabled: String, list: String, oname: String) =
+    def oneLine(name: String, typescala: String, sha: String, disabled: String, list: String, oname: String) =
       s"""<div class="li control-group">
       <label class="keyname control-label">$name</label>
       <div class="controls">
@@ -289,16 +289,16 @@ object Jsontocaseclass extends js.JSApp {
       </div>
       </div>
       """
-    def one_class(oname: String, sha: String) = s"""<div id="class_$sha" class="one_class">
+    def oneClass(oname: String, sha: String) = s"""<div id="class_$sha" class="one_class">
       <fieldset>
       <div class="class_title"><i class="icon-leaf"></i> <input class="class_name" data-signature-class="$sha" type="text" value="$oname" /></div>
       <div class="ul"></div>
       </fieldset>
       </div>"""
 
-    def one_scala_cclass(cname: String, ccontent: String) = s"""case class $cname(\n$ccontent\n)"""
+    def oneScalaCClass(cname: String, ccontent: String) = s"""case class $cname(\n$ccontent\n)"""
     //one_scala_props : _.template('<%= pname %>\:<%= ptype %>'),
-    def scala_code(code: String) = s"""<pre class="sh_scala">$code</pre>"""
+    def scalaCode(code: String) = s"""<pre class="sh_scala">$code</pre>"""
   }
 
 }
