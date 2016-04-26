@@ -7,12 +7,37 @@ import org.scalajs.dom
 import org.querki.jquery._
 import scala.scalajs.js.JSON
 import scala.util.control.NonFatal
-import scala.scalajs.js.annotation.JSName
-import scala.scalajs.js.UndefOrOps
-
+import sri.core._
+import sri.web.all._
+import sri.web.vdom.htmltags._
+import sri.web.ReactDOM
+import components.CodeGenerator
+import scala.collection.immutable.ListSet
 
 object Jsontocaseclass extends js.JSApp {
-  def main(): Unit = {
+  var alerts = Alerts()
+  var generatedShas = ListSet.empty[String]
+  var generatedClses: List[(String, List[ClassField])] = List.empty
+  var changed = false
+
+  /* Temporary callback/hack to get info from the input that is not in react */
+  def regenerate(callback: (List[(String, List[ClassField])], Vector[String], Alerts) => Unit) {
+    if (changed) {
+      changed = false
+      println("Something change -> regenarte")
+      callback(generatedClses, generatedShas.toVector.reverse, alerts)
+    }
+
+    js.timers.setTimeout(500) {
+      regenerate(callback)
+    }
+  }
+
+  @JSExport
+  override def main(): Unit = {
+    val eleme = dom.document.getElementById("app")
+    println(eleme.outerHTML)
+
     $("#caseclassform textarea").change( (e: org.querki.jquery.JQueryEventObject) => {
       val finalCode = $(e.target).valueString
       $("#mycodeis").html(t.scalaCode(finalCode))
@@ -29,18 +54,14 @@ object Jsontocaseclass extends js.JSApp {
       $("#pastejsonform").submit()
     })
 
+    ReactDOM.render(CodeGenerator(generatedClses, regenerate _), dom.document.getElementById("app"))
+
     $("#pastejsonform").submit((el: dom.Element, e: org.querki.jquery.JQueryEventObject) => {
       e.preventDefault()
-      $("#optionzone").html("""<form class="form-horizontal" id="json_analisys_zone">"""
-         +"""                 <h2>Json analysis</h2>"""
-         +"""                 <div id="alertplace"></div>"""
-         +"""                 <div id="classesplace"></div>"""
-         +"""                 <button type="submit" class=" pull-right btn btn-primary"><i class="icon-cogs"></i> re-generate</button>"""
-         +"                 </form>")
 
-      $("#json_analisys_zone").submit((el: dom.Element, e: org.querki.jquery.JQueryEventObject) => {
-          reGenerateScala(e)
-      })
+      generatedClses = List.empty
+      alerts = Alerts()
+      generatedShas = ListSet.empty
 
       val rawJson = $(e.target).find("textarea").valueString
 
@@ -49,7 +70,7 @@ object Jsontocaseclass extends js.JSApp {
           JSON.parse(rawJson)
         }
         catch {
-          case NonFatal(e) => $("#alertplace").append(t.error("The json root is invalid..."))
+          case NonFatal(e) => alerts = alerts.includingError("The json root is invalid...")
           throw e
           //return 1
         }
@@ -57,34 +78,30 @@ object Jsontocaseclass extends js.JSApp {
       val o = (parsedJson: Any) match {
         case a: js.Array[_] =>
           println("array")
-          $("#alertplace").append(t.alert("The json root is an array, only the first entity will be analyse..."))
+          alerts = alerts.includingWarn("The json root is an array, only the first entity will be analyse...")
           a.head.asInstanceOf[js.Object]
         case a: js.Object => println("object") ; a
         case _ =>
-          $("#alertplace").append(t.error("The json root is not an object, cannot do anything for you..."))
+          alerts = alerts.includingError("The json root is not an object, cannot do anything for you...")
           throw new Exception("Not an Object or Array")
       }
 
       analyseObject(o, "r00tJsonObject")
 
-      $("#alertplace").append(t.info($("#classesplace div.one_class").length+" case class generated"))
+      changed = true
 
-      /* This may be redudant, according some tests of mine */
+      /* This is not redudant, it's a fix for a nasty bug that we will fix in the future */
       $("input.class_name").foreach { el =>
-        majName(el)
+       // majName(el)
       }
 
-      generateScala($("#classesplace"))
-
       $("input.class_name").change({ (e: dom.Element, event: JQueryEventObject) =>
-        majName(e)
-      })
-
-      $("#classesplace input").change({ (e: JQueryEventObject) =>
-        reGenerateScala(e)
+       // majName(e)
       })
     })
   }
+
+
 
   // HERE CAN BE SOME CONFIG PLACE
 
@@ -92,11 +109,7 @@ object Jsontocaseclass extends js.JSApp {
   val scalaChars = List("-", "_")
   val scalaTypes = List("List", "Type", "Meta", "Result") ++ scalaWords.map(_.capitalize)
 
-  case class ClassField(name: String, typescala: String, sha: String = "", preventChange: Boolean = false, list: String = "") {
-    def disabled = if (preventChange) "disabled" else ""
-  }
-
-  def analyseArray(array: collection.mutable.Seq[Any], key: String, parentName: String) = {
+  def analyseArray(array: collection.mutable.Seq[Any], key: String, parentName: String): ClassField = {
     val field = ClassField(key, "String")
     if (isValueConsistent(array)) {
       val listField = field.copy(list = "List", preventChange = true)
@@ -123,31 +136,32 @@ object Jsontocaseclass extends js.JSApp {
               listField.copy(typescala = ts, preventChange = false)
           }
         case _ =>
-          $("#alertplace").append(t.error(s"the $parentName $key field is an empty array : cannot analyse :-("))
-          listField.copy(typescala = generatedTs)
+          alerts = alerts.includingError(s"the $parentName $key field is an empty array : cannot analyse :-(")
+          val ts = generateName(s"${listField.list}[String]")
+          listField.copy(typescala = ts, preventChange = false)
       }
     } else {
-      $("#alertplace").append(t.error(s"the $parentName $key field is prentending an array but not consistent"))
+      alerts = alerts.includingError(s"the $parentName $key field is prentending an array but not consistent")
       field // If value is not consistent, just return String field
     }
   }
 
+
+
   def analyseObject(o: js.Object, oname2: String) {
     val oname = generateName(oname2)
     val sign = generateSignature(o)
-    if ($("#class_" + sign).length > 0) {
+
+    if (generatedShas.contains(sign)) {
       // println("class already analyse")
     } else {
-      val elem = $(t.oneClass(oname, sign.asInstanceOf[String]))
-      val elemU = elem.find("div.ul")
-
       val obj = o.asInstanceOf[js.Dictionary[Any]]
 
       if (obj.keys.size > 22) {
-        $("#alertplace").append(t.error(s"the $oname class is exceding 22 fields, generated but it will not work, due to the Product arity limitation"))
+        alerts = alerts.includingError(s"the $oname class is exceding 22 fields, generated but it will not work, due to the Product arity limitation")
       }
 
-      obj.foreach {
+      val fields = obj.map {
         case (key: String, dvalue: Any) =>
           val field = ClassField(key, "String")
 
@@ -160,24 +174,22 @@ object Jsontocaseclass extends js.JSApp {
             case value: js.Object =>
               val sha = generateSignature(value)
               analyseObject(value, key)
-              field.copy(typescala = generateName(key), preventChange = true, sha = sha)
+              /// if it already exists we should do something
+              val f = field.copy(typescala = generateName(key), preventChange = true, sha = sha)
+              f
             case _ => field // last resort, just return String field
           }
-          val f = finalField
-          elemU.append(t.oneLine(key, f.typescala, f.sha, f.disabled, f.list, oname))
 
+          finalField
         case (key: String, _) =>
           // when we have null as field value, treat as string
-          val f = ClassField(key, "String")
-          elemU.append(t.oneLine(key, f.typescala, f.sha, f.disabled, f.list, oname))
+          ClassField(key, "String")
       }
 
-      elem.append(t.info(elemU.find(".li").length + " fields"))
-
-      $("#classesplace").append(elem)
+      generatedClses = generatedClses :+ (oname, fields.toList)
+      generatedShas = generatedShas + sign
     }
-
-}
+  }
 
   def sanitizeVarName(name: String): String = {
     /* java's String.matches all input data */
@@ -223,11 +235,6 @@ object Jsontocaseclass extends js.JSApp {
     }
   }
 
-  def reGenerateScala(e: dom.Event) {
-      e.preventDefault()
-      generateScala($("#classesplace"))
-  }
-
   def isValueConsistent(array: collection.mutable.Seq[Any]): Boolean = {
     def itemSignature(item: Any) = item match {
       case obj: js.Object => generateSignature(obj)
@@ -248,6 +255,7 @@ object Jsontocaseclass extends js.JSApp {
    }
   }
 
+  /* TO-DO: Make generateSignature recursive to avoid clashes */
   def generateSignature(o: js.Object): String = {
     val objDict = o.asInstanceOf[js.Dictionary[Any]]
     val baseString = objDict.keys.toList.map { n => n.toLowerCase() }.sorted.mkString("|")
