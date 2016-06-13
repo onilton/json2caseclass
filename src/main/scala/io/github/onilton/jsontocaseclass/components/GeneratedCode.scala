@@ -6,7 +6,7 @@ import scala.scalajs.js.annotation.ScalaJSDefined
 import sri.core._
 import sri.web.all._
 import sri.web.vdom.htmltags._
-import io.github.onilton.jsontocaseclass.{ ClassField, Alerts, CaseClass, VCaseClass}
+import io.github.onilton.jsontocaseclass.{ ClassField, Alerts, CaseClass}
 
 import scala.scalajs.js.UndefOr.any2undefOrA
 import scala.scalajs.js.|.from

@@ -7,7 +7,7 @@ import scala.scalajs.js.annotation.ScalaJSDefined
 import sri.core._
 import sri.web.all._
 import sri.web.vdom.htmltags._
-import io.github.onilton.jsontocaseclass.{ClassField, VCaseClass}
+import io.github.onilton.jsontocaseclass.{ClassField, CaseClass}
 
 import scala.scalajs.js.UndefOr.any2undefOrA
 import scala.scalajs.js.UndefOr.any2undefOrUnion
@@ -17,7 +17,7 @@ import scala.scalajs.js.Dynamic.{literal => json}
 
 
 object GeneratedClass {
-  case class Props(generatedClassName: String, fields: Vector[ClassField], updateGeneratedClass: VCaseClass => Unit)
+  case class Props(generatedClassName: String, fields: Vector[ClassField], updateGeneratedClass: CaseClass => Unit)
 
   @ScalaJSDefined
   class Component extends ReactComponentPureRefP[Props] {
@@ -54,8 +54,8 @@ object GeneratedClass {
   val ctor = getTypedConstructor(js.constructorOf[Component], classOf[Component])
 
   def apply(
-      generatedClassName: String, fields: List[ClassField],
-      updateGeneratedClass: VCaseClass => Unit,
+      generatedClassName: String, fields: Vector[ClassField],
+      updateGeneratedClass: CaseClass => Unit,
       key: js.UndefOr[String] = js.undefined,
       ref: js.Function1[Component, _] = null) =  {
     val props = Props(generatedClassName, fields.toVector, updateGeneratedClass)

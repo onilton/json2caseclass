@@ -17,11 +17,11 @@ import scala.collection.immutable.ListSet
 object Jsontocaseclass extends js.JSApp {
   var alerts = Alerts()
   var generatedShas = ListSet.empty[String]
-  var generatedClses: List[(String, List[ClassField])] = List.empty
+  var generatedClses: Vector[(String, Vector[ClassField])] = Vector.empty
   var changed = false
 
   /* Temporary callback/hack to get info from the input that is not in react */
-  def regenerate(callback: (List[(String, List[ClassField])], Vector[String], Alerts) => Unit) {
+  def regenerate(callback: (Vector[(String, Vector[ClassField])], Vector[String], Alerts) => Unit) {
     if (changed) {
       changed = false
       println("Something change -> regenarte")
@@ -59,7 +59,7 @@ object Jsontocaseclass extends js.JSApp {
     $("#pastejsonform").submit((el: dom.Element, e: org.querki.jquery.JQueryEventObject) => {
       e.preventDefault()
 
-      generatedClses = List.empty
+      generatedClses = Vector.empty
       alerts = Alerts()
       generatedShas = ListSet.empty
 
@@ -186,7 +186,7 @@ object Jsontocaseclass extends js.JSApp {
           ClassField(key, "String")
       }
 
-      generatedClses = generatedClses :+ (oname, fields.toList)
+      generatedClses = generatedClses :+ (oname, fields.toVector)
       generatedShas = generatedShas + sign
     }
   }

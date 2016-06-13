@@ -6,7 +6,7 @@ import scala.scalajs.js.annotation.ScalaJSDefined
 import sri.core._
 import sri.web.all._
 import sri.web.vdom.htmltags._
-import io.github.onilton.jsontocaseclass.{ ClassField, Alerts, CaseClass, VCaseClass}
+import io.github.onilton.jsontocaseclass.{ ClassField, Alerts, CaseClass}
 
 import scala.scalajs.js.UndefOr.any2undefOrA
 import scala.scalajs.js.|.from
@@ -16,8 +16,8 @@ import scala.scalajs.js.annotation.JSName
 
 object CodeGenerator {
   case class Props(
-    clsses: List[CaseClass],
-    dataChange: ((List[CaseClass], Vector[String], Alerts) => Unit) => Unit)
+    clsses: Vector[CaseClass],
+    dataChange: ((Vector[CaseClass], Vector[String], Alerts) => Unit) => Unit)
   case class State(clsses: Vector[CaseClass], shas: Vector[String], alerts: Alerts)
 
 
@@ -25,10 +25,9 @@ object CodeGenerator {
   class Component extends ReactComponentPureRef[Props, State] {
     initialState(State(clsses = Vector.empty, shas = Vector.empty, alerts = Alerts()))
 
-    def updateGeneratedClass(classIndex: Int)(vCaseClass: VCaseClass) = {
+    def updateGeneratedClass(classIndex: Int)(caseClass: CaseClass) = {
       println("Updating top")
-      val (newName, fields) = vCaseClass
-      val caseClass = (newName, fields.toList)
+      val (newName, fields) = caseClass
 
       val oldName = state.clsses(classIndex)._1
       if (newName != oldName) {
@@ -53,7 +52,7 @@ object CodeGenerator {
 
     }
 
-    def updateHandler(clsses: List[CaseClass], shas: Vector[String], alerts: Alerts) = {
+    def updateHandler(clsses: Vector[CaseClass], shas: Vector[String], alerts: Alerts) = {
       println("updateHandlerSomething change -> regenarte")
       setState(State(clsses.toVector, shas, alerts))
     }
@@ -102,8 +101,8 @@ object CodeGenerator {
   val ctor = getTypedConstructor(js.constructorOf[Component], classOf[Component])
 
   def apply(
-      clsses: List[CaseClass],
-      dataChange: ((List[CaseClass], Vector[String], Alerts) => Unit) => Unit,
+      clsses: Vector[CaseClass],
+      dataChange: ((Vector[CaseClass], Vector[String], Alerts) => Unit) => Unit,
       key: js.UndefOr[String] = js.undefined,
       ref: js.Function1[Component, _] = null) = {
     val props = Props(clsses, dataChange)

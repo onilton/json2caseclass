@@ -24,6 +24,5 @@ package object jsontocaseclass {
 
   }
 
-  type CaseClass = (String, List[ClassField])
-  type VCaseClass = (String, Vector[ClassField])
+  type CaseClass = (String, Vector[ClassField])
 }
