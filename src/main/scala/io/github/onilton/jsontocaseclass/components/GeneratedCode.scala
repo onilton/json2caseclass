@@ -12,6 +12,8 @@ import scala.scalajs.js.UndefOr.any2undefOrA
 import scala.scalajs.js.|.from
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSName
+import js.Dynamic.literal
+import js.Dynamic.{global => g}
 
 
 object GeneratedCode {
@@ -34,6 +36,10 @@ object GeneratedCode {
       }.mkString("\n")
     }
 
+    def generatedPrettyScalaCode(): String = {
+      g.hljs.highlight("scala", generatedScalaCode(), false, null).value.asInstanceOf[String]
+    }
+
     def onClick(tabIndex: Int)(e: ReactEvent) {
       e.preventDefault()
       setState(State(tabIndex))
@@ -44,13 +50,21 @@ object GeneratedCode {
 
       val tabs = Vector("Pretty", "Raw")
 
+      val CodeAttributes = literal(
+        "dangerouslySetInnerHTML" -> literal(
+          "__html" -> generatedPrettyScalaCode()
+        )
+      )
+
       val tabContents = Vector(
         pre()(
-          code(className="scala")(scalaCode)
+          code(className = "scala", extraAttributes = CodeAttributes)()
         ),
-        textarea(rows = 8, className = "span12", placeholder = "here is the result")(
-          scalaCode
-        )
+        textarea(rows = 8,
+                 className = "span12",
+                 placeholder = "here is the result",
+                 readOnly = true,
+                 extraAttributes = literal(value = scalaCode))()
       )
 
       form(id = "caseclassform")(
@@ -60,7 +74,7 @@ object GeneratedCode {
             tabs.zipWithIndex.map { case (name, index) =>
               val normalizedName = name.toLowerCase()
 
-              li(className = if (state.tabIndex == index) "active" else "")(
+              li(className = if (state.tabIndex == index) "active" else "", key = index)(
                 a(href = s"#$normalizedName", onClick = onClick(index) _ )(name)
               )
             }
@@ -71,7 +85,7 @@ object GeneratedCode {
               val normalizedName = tabs(1).toLowerCase()
               val active = if (state.tabIndex == index) "active" else ""
 
-              div(className = s"tab-pane $active", id = normalizedName)(
+              div(className = s"tab-pane $active", id = normalizedName, key = index)(
                content
               )
             }
