@@ -68,9 +68,9 @@ object CodeGenerator {
 
       val alertsPlace =
         div(id="alertplace")(
-          state.alerts.errors.zipWithIndex.map { case (msg, id) => ErrorAlert(msg) },
-          state.alerts.warns.zipWithIndex.map { case (msg, id) => WarnAlert(msg) },
-          state.alerts.infos.zipWithIndex.map { case (msg, id) => InfoAlert(msg) },
+          state.alerts.errors.zipWithIndex.map { case (msg, id) => ErrorAlert(msg, key = id.toString()) },
+          state.alerts.warns.zipWithIndex.map { case (msg, id) => WarnAlert(msg, key = id.toString()) },
+          state.alerts.infos.zipWithIndex.map { case (msg, id) => InfoAlert(msg, key = id.toString()) },
           InfoAlert(s"${generatedCount} case classes generated")
         )
 

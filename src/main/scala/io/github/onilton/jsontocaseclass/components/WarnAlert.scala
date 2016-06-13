@@ -17,5 +17,5 @@ object WarnAlert {
     )
   }
 
-  def apply(props : String) = createStatelessFunctionElement(component, props)
+  def apply(props : String, key: js.UndefOr[String] = js.undefined) = createStatelessFunctionElement(component, props, key)
 }
