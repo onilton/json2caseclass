@@ -63,44 +63,25 @@ object CodeGenerator {
       props.dataChange(updateHandler)
     }
 
-    def generateScala(): String = {
-      state.clsses.map { case (name, fields) =>
-        val ccontent = fields.map { f =>
-          val finalType = if (f.optional) s"Option[${f.typescala}]" else f.typescala
-          // TO-DO sanitizeVarname
-          s"  ${f.name}: $finalType"
-        }.mkString(",\n")
-        //t.oneScalaCClass(jvalue.find("input.class_name").valueString, props.mkString(",\n"))
-
-        s"""case class $name(\n$ccontent\n)"""
-      }.mkString("\n")
-    }
-
     def render() = {
       val generatedCount = state.clsses.size
 
-
-
-      val scalaResult =
-        form(id = "caseclassform")(
-          fieldset()(
-            legend()("Scala result"),
-            div(id = "mycodeis")(),
-            textarea(rows = 8, className = "span12", placeholder = "here is the result")(generateScala())
-          )
+      val alertsPlace =
+        div(id="alertplace")(
+          state.alerts.errors.zipWithIndex.map { case (msg, id) => ErrorAlert(msg) },
+          state.alerts.warns.zipWithIndex.map { case (msg, id) => WarnAlert(msg) },
+          state.alerts.infos.zipWithIndex.map { case (msg, id) => InfoAlert(msg) },
+          InfoAlert(s"${generatedCount} case classes generated")
         )
+
+      val codeViewer = GeneratedCode(state.clsses)
 
       if (generatedCount > 0 ) {
         div(className="span12")(
           div(id = "optionzone")(
             form(className = "form-horizontal", id = "json_analisys_zone")(
               h2()("Json analysis"),
-              div(id="alertplace")(
-                state.alerts.errors.zipWithIndex.map { case (msg, id) => ErrorAlert(msg) },
-                state.alerts.warns.zipWithIndex.map { case (msg, id) => WarnAlert(msg) },
-                state.alerts.infos.zipWithIndex.map { case (msg, id) => InfoAlert(msg) },
-                InfoAlert(s"$generatedCount case classes generated")
-              ),
+              alertsPlace,
               div(id = "classesplace")(
                 state.clsses.zipWithIndex.map { case ((name, fields), id) =>
                   GeneratedClass(name, fields, updateGeneratedClass(id), id.toString)
@@ -108,11 +89,11 @@ object CodeGenerator {
               )
             )
           ),
-          scalaResult
+          codeViewer
         )
       } else {
         div(className="span12")(
-          scalaResult
+          codeViewer
         )
       }
     }
