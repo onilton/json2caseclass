@@ -7,9 +7,6 @@ import org.scalajs.dom
 import org.querki.jquery._
 import scala.scalajs.js.JSON
 import scala.util.control.NonFatal
-import sri.core._
-import sri.web.all._
-import sri.web.vdom.htmltags._
 import sri.web.ReactDOM
 import components.CodeGenerator
 import scala.collection.immutable.ListSet
