@@ -10,9 +10,27 @@ import js.|
 package object hljs {
   @js.native
   trait IHighlightResultBase extends js.Object {
-    var relevance: Double = js.native
+    // Workaround for bug, see below
+    @JSName("relevance")
+    private[hljs] var jsRelevance: UndefOr[Double] = js.native
+    @JSName("r")
+    private[hljs] var jsR: UndefOr[Double] = js.native
+
+    //var relevance: Double = js.native // Bug, see below
     var language: String = js.native
     var value: String = js.native
+  }
+
+  /* Temporary fix for https://github.com/isagalaev/highlight.js/issues/1215 */
+  implicit class FixedIHighlightResultBase(val i: IHighlightResultBase) extends AnyVal {
+    def relevance: Double = {
+      i.jsRelevance.getOrElse(i.jsR.get)
+    }
+
+    def relevance_=(v: Double) {
+      i.jsRelevance = v
+      i.jsR = v
+    }
   }
 
   @js.native
