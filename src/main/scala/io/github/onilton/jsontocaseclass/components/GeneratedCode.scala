@@ -14,6 +14,7 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSName
 import js.Dynamic.literal
 import js.Dynamic.{global => g}
+import io.github.onilton.hljs.Hljs
 
 
 object GeneratedCode {
@@ -37,7 +38,7 @@ object GeneratedCode {
     }
 
     def generatedPrettyScalaCode(): String = {
-      g.hljs.highlight("scala", generatedScalaCode(), false, null).value.asInstanceOf[String]
+      Hljs.highlight("scala", generatedScalaCode(), true).value
     }
 
     def onClick(tabIndex: Int)(e: ReactEvent) {
