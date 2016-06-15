@@ -13,8 +13,24 @@ This fork is my try to port the original code to Scala.js.
 
  * ~~Get rid of underscore.js~~
  * ~~More types!~~
- * Use something modern like React.js
+ * ~~Use something modern like React.js~~
  * Use something like scalacss?
+
+## Running
+
+```
+sbt ~fastOptJS
+```
+
+Open new terminal and run
+
+```
+npm install
+
+npm start
+```
+
+open http://localhost:8090/ in browser
 
 json 2 case class
 =================
